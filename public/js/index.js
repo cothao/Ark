@@ -1,5 +1,5 @@
 
-let player, platforms, cursors,bg,raptor;
+let player, platforms, cursors,bg,raptor,overlap, keyW, keyS, keyA, keyD;
 let backgrounds = []
 
 const config = {
@@ -47,34 +47,31 @@ function preload() {
     frameHeight: 48,
     frames: 120,
   });
+  
   this?.load?.spritesheet("raptor", "/assets/enemies/spritesheets/1x/raptor-idle.png", {
-    frameWidth: 124,
+    frameWidth: 128,
     frameHeight: 64,
     frames: 2,
   });
   this?.load?.spritesheet("raptorRun", "/assets/enemies/spritesheets/1x/raptor-run.png", {
-    frameWidth: 124,
+    frameWidth: 128,
     frameHeight: 64,
     frames: 6,
+  });
+  this?.load?.spritesheet("raptorBite", "/assets/enemies/spritesheets/1x/raptor-bite.png", {
+    frameWidth: 128,
+    frameHeight: 64,
+    frames: 10,
   });
   // this.load.image("background", "/assets/background/Layer_0005_5.png");
   // this.load.image("background", "/assets/background/Layer_0005_5.png");
 }
 
 function create() {
-  // this.add.image(0, -690, "background12").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background2").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background3").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background4").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background5").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background6").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background8").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "ground").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background7").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background9").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background10").setOrigin(0, 0).setScale(1.5, 1.5);
-  // this.add.image(0, -690, "background11").setOrigin(0, 0).setScale(1.5, 1.5);
+  keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+  keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+  keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+  keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 let {width,height} = game.config
 
   // bg = this.add.image(0, 0, "background").setOrigin(0, 0).setScrollFactor(0);
@@ -130,6 +127,12 @@ let {width,height} = game.config
     repeat: -1,
   });
   this.anims.create({
+    key: "playerAttack",
+    frames: this.anims.generateFrameNumbers("player", { start:109, end: 116 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+  this.anims.create({
     key: "raptorIdle",
     frames: this.anims.generateFrameNumbers("raptor", { start: 0, end: 1 }),
     frameRate: 10,
@@ -138,6 +141,12 @@ let {width,height} = game.config
   this.anims.create({
     key: "raptorRun",
     frames: this.anims.generateFrameNumbers("raptorRun", { start: 0, end: 5 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: "raptorBite",
+    frames: this.anims.generateFrameNumbers("raptorBite", { start: 0, end: 9 }),
     frameRate: 10,
     repeat: -1,
   });
@@ -153,25 +162,44 @@ let {width,height} = game.config
   // console.log(platforms);
   player = this.physics.add.sprite(100, 0, "player");
   raptor = this.physics.add.sprite(100, 0, 'raptor')
+  raptor.isOverlapped = false
   player.setOffset(0, -6);
   this.physics.add.collider(player, platforms);
   this.physics.add.collider(raptor, platforms);
   this.physics.add.existing(platforms);
   this.cameras.main.startFollow(player, true, 1, 1, 0, 200);
-  function enemyFollows (player, enemy) {
-    this.physics.moveToObject(enemy, player, 100);
-  }
+  
+  overlap = this.physics.add.overlap(player, raptor, () => {
+    if (raptor.body.overlapX < 0) {
+      raptor.anims.play('raptorBite', true)
+      raptor.isOverlapped = true
+    }
+  })
 }
 
 function update() {
+  if (raptor.body.position.x < player.body.position.x) {
+    raptor.flipX = false
+  } else {
+    raptor.flipX = true
+  }
+  if (raptor.body.overlapX > 0) {
+    raptor.isOverlapped = false
+  }
+  // console.log(raptor.body.velocity)
   cursors = this.input.keyboard.createCursorKeys();
-  if (cursors.right.isDown && !cursors.left.isDown) {
+  if (keyD.isDown && !keyA.isDown) {
     player.setVelocityX(100);
     player.anims.play('playerWalk', false)
-  } else if (cursors.left.isDown) {
+  } else if (keyA.isDown) {
     player.setVelocityX(-100)
+    player.anims.play('playerWalk', false)
+
   } else {
-    player.anims.play("playerIdle", true);
+    if (!player.isAttacking){
+
+      player.anims.play("playerIdle", true);
+    }
     player.setVelocityX(0)
   }
   // Background Handles
@@ -180,11 +208,27 @@ function update() {
     bg.sprite.tilePositionX = this.cameras.main.scrollX * bg.ratioX
   }
   this.physics.moveToObject(raptor, player, 100);
-  if (raptor.body.newVelocity.x < 0 || raptor.body.newVelocity.x > 0) {
+  if ((raptor.body.velocity.x < 0 || raptor.body.velocity.x > 0) && !raptor.isOverlapped) {
     raptor.anims.play('raptorRun', true)
   } else {
-    raptor.anims.play('raptorIdle', true)
+    // raptor.anims.play('raptorIdle', true)
   }
+  window.addEventListener('mousemove', (e)=> {
+    if (e.clientX < 400) {
+      player.flipX = true
+    } else {
+      player.flipX = false
+    }
+  })
+  window.addEventListener('click', (e)=> {
+    console.log('helo world')
+    player.isAttacking = true
+    player.anims.play('playerAttack', false)
+  })
 }
 
 const game = new Phaser.Game(config);
+
+function raptorBody() {
+
+}
