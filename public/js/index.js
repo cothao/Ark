@@ -21,7 +21,10 @@ let player,
 let counter = 0;
 let start = false;
 let backgrounds = [];
-
+let wood = {
+  id: 1,
+  amount: 0,
+};
 const config = {
   type: Phaser.AUTO,
   parent: "phaser-example",
@@ -551,7 +554,7 @@ function update() {
           }
           overlapTriggered = true;
           // monster.health -= 10;
-          if (this.physics.overlap(punchHitbox, raptor)) {
+          if (this.physics.overlap(punchHitbox, raptor) && !raptor.tamed) {
             raptor.health -= player.damage;
           } else if (this.physics.overlap(punchHitbox, tree)) {
             tree.health -= player.damage;
@@ -581,12 +584,14 @@ function update() {
           overlapTriggered = true;
 
           // monster.health -= 10;
-          if (this.physics.overlap(punchHitbox, raptor)) {
+          if (this.physics.overlap(punchHitbox, raptor) && !raptor.tamed) {
             raptor.health -= player.damage;
           } else if (this.physics.overlap(punchHitbox, tree)) {
             tree.health -= player.damage;
           }
           punchHitbox.destroy();
+          overlapTriggered = false;
+
           setTimeout(() => {}, 200);
         });
       }
@@ -643,19 +648,31 @@ function update() {
       }
     }
   });
-  function addText() {
+  function callOnce() {
     hasFunctionBeenCalled = false;
   }
   if (tree.health <= 0 && !hasFunctionBeenCalled) {
-    addText();
-    this.add.text(
+    callOnce();
+    let woodAmount = Math.floor(Math.random() * 10) + 1;
+    if (
+      !player.inventory.find((item) => {
+        return item.id === 1;
+      })
+    ) {
+      player.inventory.push(wood);
+    }
+    wood.amount += woodAmount;
+    let addWood = this.add.text(
       player.body.position.x,
       player.body.position.y,
-      `Added ${Math.floor(Math.random() * 10)} wood.`,
+      `Added ${woodAmount} wood.`,
       {
         fontsize: 30,
       }
     );
+    setTimeout(() => {
+      addWood.destroy();
+    }, 2000);
     tree.clear(true, true);
     hasFunctionBeenCalled = true;
   }
