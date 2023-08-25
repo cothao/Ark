@@ -1,3 +1,7 @@
+// import { Reverse } from "../../dist/bundle.js";
+// import {Raptor} from "../../dist/bundle.js";
+import Raptor from './components/raptor.js'
+
 let hasFunctionBeenCalled = false;
 let player,
   platforms,
@@ -9,7 +13,9 @@ let player,
   keyS,
   keyA,
   keyD,
+  keyQ,
   keyE,
+  keyF,
   shift,
   enter,
   punchHitbox,
@@ -17,10 +23,24 @@ let player,
   tame,
   meat,
   raptorVision,
-  tree;
+  tree,
+  item1;
+let currentAnim = "PlayerNeutral";
+let itemPosition = 0;
+
 let counter = 0;
 let start = false;
 let backgrounds = [];
+let club = {
+  id: 2,
+  dmg: 5,
+  amount: 0,
+  torpor: 5,
+  requirement: {
+    wood: 1,
+  },
+  anim: "club",
+};
 let wood = {
   id: 1,
   amount: 0,
@@ -87,6 +107,12 @@ function preload() {
     frameHeight: 40,
     frames: 5,
   });
+  this.load.spritesheet("club", "/assets/player/Player_Attack_Mallet.png", {
+    frameWidth: 40,
+    frameHeight: 40,
+    frames: 5,
+  });
+
   this?.load?.spritesheet(
     "raptor",
     "/assets/enemies/spritesheets/1x/raptor-idle.png",
@@ -139,6 +165,8 @@ function create() {
   keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
   keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
   keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+  keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+  keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
   shift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
   enter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
   // startingScreen.destroy();
@@ -351,6 +379,15 @@ function create() {
     repeat: -1,
   });
   this.anims.create({
+    key: "club",
+    frames: this.anims.generateFrameNumbers("club", {
+      start: 0,
+      end: 4,
+    }),
+    frameRate: 10,
+    repeat: -1,
+  });
+  this.anims.create({
     key: "raptorIdle",
     frames: this.anims.generateFrameNumbers("raptor", { start: 0, end: 1 }),
     frameRate: 10,
@@ -472,11 +509,32 @@ function create() {
     console.log("gain 5 wood");
     tree.clear(true, true);
   }
-  console.log();
+  console.log(player.body.position.x);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") {
+      let items = document.querySelector("#items").children;
+      if (itemPosition < 5) {
+        itemPosition++;
+      } else {
+        itemPosition = 1;
+      }
+      for (let i = 0; i < items.length; i++) {
+        items[i].style.border = "";
+        if (items[i].getAttribute("id") === `item${itemPosition}`) {
+          items[i].style.border = "2px solid white";
+        }
+      }
+    }
+  });
+  new Raptor(this, 600, 400, platforms)
+  // console.log(this)
+  // rap.draw()
+  // raptorGuy
 }
 
 function update() {
   //ANCHOR - UPDATE
+
   punchHitbox.destroy();
   punchHitbox.isFilled = false;
   // console.log(raptor.body.velocity)
@@ -488,7 +546,11 @@ function update() {
     if (keyD?.isDown && shift?.isDown) {
       player.setVelocityX(150);
       if (!player.isAttacking) {
-        player.anims.play("playerRun", true);
+        if (currentAnim === "PlayerNeutral") {
+          player.anims.play("playerRun", true);
+        } else if (currentAnim === "club") {
+          // player.anims.play("club", true);
+        }
       }
     }
     if (keyD.isDown && !shift.isDown) {
@@ -533,7 +595,11 @@ function update() {
     player.isAttacking = true;
   });
   if (player.isAttacking) {
-    player.anims.play("playerPunch", true);
+    if (currentAnim === "PlayerNeutral") {
+      player.anims.play("playerPunch", true);
+    } else if (currentAnim === "club") {
+      player.anims.play("club", true);
+    }
     if (player.anims.currentFrame.index > 3) {
       if (!player.flipX) {
         punchHitbox = this.add.rectangle(
@@ -676,23 +742,42 @@ function update() {
     tree.clear(true, true);
     hasFunctionBeenCalled = true;
   }
+  if (keyQ.isDown) {
+    if (player.inventory[0].amount >= club.requirement.wood) {
+      player.inventory[0].amount -= club.requirement.wood;
+      console.log("making club...");
+      setTimeout(() => {
+        let itemBar = document.querySelector("#items").children;
+        player.inventory.push(club);
+
+        for (let i = 0; i < itemBar.length; i++) {
+          if (!itemBar[i].children[0].src) {
+            itemBar[i].children[0].src = "./assets/UI/Wooden_Club.png";
+            itemBar[i].currentItemId = 2;
+
+            player.inventory.find((item) => {
+              return item.id === 2;
+            }).slot = i;
+            break;
+          }
+        }
+        console.log(player.inventory);
+        // console.log(itemBar);
+      }, 2000);
+    } else {
+      console.log("not enough wood");
+    }
+  }
+  if (keyF.isDown) {
+    let _item = player.inventory.find((item) => {
+      return item.slot === itemPosition;
+    });
+    if (_item) {
+      currentAnim = _item.anim;
+    } else {
+      currentAnim = "PlayerNeutral";
+    }
+  }
 }
-// console.log(this.physics.add.overlap(raptor, player));
 
 const game = new Phaser.Game(config);
-
-class Raptor {
-  constructor({ position }) {
-    this.position = position;
-    this.isAlive = true;
-    this.isTamed = false;
-    this.health = 10;
-    this.torpor = 0;
-  }
-  init() {
-    let raptor = this.physics.add.sprite(100, 0, "raptor");
-    raptor.setSize(70, 30);
-    raptor.setOffset(30, 30);
-    this.physics.add.collider(raptor, platforms);
-  }
-}
