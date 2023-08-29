@@ -1,13 +1,13 @@
 // import { Reverse } from "../../dist/bundle.js";
 // import {Raptor} from "../../dist/bundle.js";
 import Raptor from './components/raptor.js'
+import Player from './components/player.js'
 
 let hasFunctionBeenCalled = false;
 let player,
   platforms,
   cursors,
   bg,
-  raptor,
   overlap,
   keyW,
   keyS,
@@ -24,10 +24,10 @@ let player,
   meat,
   raptorVision,
   tree,
-  item1;
+  item1
 let currentAnim = "PlayerNeutral";
 let itemPosition = 0;
-
+let raptors = []
 let counter = 0;
 let start = false;
 let backgrounds = [];
@@ -431,352 +431,21 @@ function create() {
         .scaleY(1.05)
     );
   }
-  //NOTE - TREE
-  tree = this.physics.add.staticGroup({
-    key: "tree1",
-    setXY: { x: 600, y: 400 },
-  });
-  tree.health = 10;
-  //NOTE - PLAYER AND RAPTOR
-  player = this.physics.add.sprite(700, 400, "player");
-  player.damage = 10;
-  player.inventory = [];
-  player.dinos = [];
-  player.meat = 1;
-  raptor = this.physics.add.sprite(1200, 400, "raptor");
-  raptor.isOverlapped = false;
-  raptor.isAlive = true;
-  raptor.health = 10;
-  raptor.tamePercentage = 0;
 
-  player.setOffset(0, -2);
-  player.setSize(15, 0);
-  raptor.setSize(70, 30);
-  raptor.setOffset(30, 30);
-  this.physics.add.collider(player, platforms);
-  this.physics.add.collider(raptor, platforms);
+  player = new Player(this, 700, 400, platforms, null, raptors)
+  raptors.push(new Raptor(this, 600, 400, platforms, player))
   this.physics.add.existing(platforms);
-  this.cameras.main.startFollow(player, true, 1, 1, 0, 200);
-
-  overlap = this.physics.add.overlap(player, raptor, () => {
-    if (keyE.isDown && !raptor.isAlive) {
-      console.log("hello world");
-      meat--;
-      raptor.tamePercentage += 100;
-      if (raptor.tamePercentage >= 100) {
-        player.dinos.push(raptor);
-        raptor.health = 10;
-        raptor.isAlive = true;
-        raptor.tamed = true;
-      }
-    }
-    if (raptor.body.overlapX < 0 && raptor.isAlive && !raptor.tamed) {
-      raptor.anims.play("raptorBite", true);
-      raptor.isOverlapped = true;
-    }
-    if (!raptor.isAlive) {
-      tame = this.add.text(
-        raptor.body.position.x,
-        raptor.body.position.y,
-        "[E] to feed meat.",
-        { fontsize: 10, color: "white" }
-      );
-      // tame?.destroy();
-
-      raptor.isOverlapped = true;
-    }
-  });
-  punchHitbox = this.add.rectangle(
-    player.body.position.x,
-    player.body.position.y,
-    10,
-    30,
-    0x6666ff
-  );
-  raptorVision = this.add.circle(
-    raptor.body.position.x,
-    raptor.body.position.y,
-    300,
-    0x0033ff
-  );
-  raptorVision.overlapTriggered = false;
-  this.physics.add.existing(raptorVision, true);
-
-  this.physics.add.overlap(raptorVision, player, () => {
-    console.log("hey");
-  });
-  if (tree.health <= 0) {
-    console.log("gain 5 wood");
-    tree.clear(true, true);
-  }
-  console.log(player.body.position.x);
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight") {
-      let items = document.querySelector("#items").children;
-      if (itemPosition < 5) {
-        itemPosition++;
-      } else {
-        itemPosition = 1;
-      }
-      for (let i = 0; i < items.length; i++) {
-        items[i].style.border = "";
-        if (items[i].getAttribute("id") === `item${itemPosition}`) {
-          items[i].style.border = "2px solid white";
-        }
-      }
-    }
-  });
-  new Raptor(this, 600, 400, platforms)
-  // console.log(this)
-  // rap.draw()
-  // raptorGuy
+  this.cameras.main.startFollow(player.player, true, 1, 1, 0, 200);
 }
 
 function update() {
   //ANCHOR - UPDATE
-
-  punchHitbox.destroy();
-  punchHitbox.isFilled = false;
-  // console.log(raptor.body.velocity)
-  cursors = this.input.keyboard.createCursorKeys();
-  if (keyW?.isDown && player?.body?.touching?.down) {
-    player?.setVelocityY(-150);
-  }
-  if (keyD?.isDown && !keyA?.isDown) {
-    if (keyD?.isDown && shift?.isDown) {
-      player.setVelocityX(150);
-      if (!player.isAttacking) {
-        if (currentAnim === "PlayerNeutral") {
-          player.anims.play("playerRun", true);
-        } else if (currentAnim === "club") {
-          // player.anims.play("club", true);
-        }
-      }
-    }
-    if (keyD.isDown && !shift.isDown) {
-      player.setVelocityX(100);
-      if (!player.isAttacking) {
-        player.anims.play("playerWalk", true);
-      }
-    }
-  } else if (keyA.isDown) {
-    if (keyA.isDown && shift.isDown) {
-      player.setVelocityX(-150);
-      if (!player.isAttacking) {
-        player.anims.play("playerRun", true);
-      }
-    }
-    if (keyA.isDown && !shift.isDown) {
-      player.setVelocityX(-100);
-      if (!player.isAttacking) {
-        player.anims.play("playerWalk", true);
-      }
-    }
-  } else {
-    if (!player.isAttacking) {
-      player.anims.play("playerIdle", true);
-    }
-    player.setVelocityX(0);
-  }
+  raptors[0].update()
+  player.update()
   // Background Handles
   for (let i = 0; i < backgrounds.length; i++) {
     const bg = backgrounds[i];
     bg.sprite.tilePositionX = this.cameras.main.scrollX * bg.ratioX;
-  }
-
-  window.addEventListener("mousemove", (e) => {
-    if (e.clientX < 400) {
-      player.flipX = true;
-    } else {
-      player.flipX = false;
-    }
-  });
-  window.addEventListener("click", (e) => {
-    player.isAttacking = true;
-  });
-  if (player.isAttacking) {
-    if (currentAnim === "PlayerNeutral") {
-      player.anims.play("playerPunch", true);
-    } else if (currentAnim === "club") {
-      player.anims.play("club", true);
-    }
-    if (player.anims.currentFrame.index > 3) {
-      if (!player.flipX) {
-        punchHitbox = this.add.rectangle(
-          player.body.position.x + 18,
-          player.body.position.y + 25,
-          12,
-          30,
-          0x6666ff
-        );
-
-        this.physics.add.existing(punchHitbox, true);
-        this.physics.add.overlap(punchHitbox, [tree, raptor], () => {
-          if (overlapTriggered) {
-            // this.physics.world.removeCollider(
-            //   this.physics.add.collider(raptor, punchHitbox)
-            // ); // removes collider instantly so code only runs once
-            // return;
-          }
-          overlapTriggered = true;
-          // monster.health -= 10;
-          if (this.physics.overlap(punchHitbox, raptor) && !raptor.tamed) {
-            raptor.health -= player.damage;
-          } else if (this.physics.overlap(punchHitbox, tree)) {
-            tree.health -= player.damage;
-          }
-          punchHitbox.destroy();
-          setTimeout(() => {
-            raptor.clearTint();
-          }, 200);
-        });
-      } else {
-        punchHitbox = this.add.rectangle(
-          player.body.position.x - 3,
-          player.body.position.y + 25,
-          12,
-          30,
-          0x6666ff
-        );
-        this.physics.add.existing(punchHitbox, true);
-        this.physics.add.overlap(punchHitbox, [tree, raptor], () => {
-          if (overlapTriggered) {
-            //FIXME - Note to self, try and fix the collissions later so that you're not doing 100 attacks/sec
-            // this.physics.world.removeCollider(
-            //   this.physics.add.collider(raptor, punchHitbox)
-            // ); // removes collider instantly so code only runs once
-            // return;
-          }
-          overlapTriggered = true;
-
-          // monster.health -= 10;
-          if (this.physics.overlap(punchHitbox, raptor) && !raptor.tamed) {
-            raptor.health -= player.damage;
-          } else if (this.physics.overlap(punchHitbox, tree)) {
-            tree.health -= player.damage;
-          }
-          punchHitbox.destroy();
-          overlapTriggered = false;
-
-          setTimeout(() => {}, 200);
-        });
-      }
-    }
-    setTimeout(() => {
-      player.isAttacking = false;
-    }, 500);
-  }
-  if (raptor.health <= 0) {
-    raptor.isAlive = false;
-  }
-  raptorVision.destroy();
-  raptorVision = this.add.circle(
-    raptor.body.position.x,
-    raptor.body.position.y,
-    200
-  );
-  this.physics.add.existing(raptorVision, true);
-  if (!raptorVision.overlapTriggered) {
-    // raptor.anims.play("raptorIdle", true);
-  }
-  this.physics.add.overlap(raptorVision, player, () => {
-    raptorVision.overlapTriggered = true;
-    if (raptor.isAlive && !raptor.tamed) {
-      if (raptor.body.position.x < player.body.position.x) {
-        raptor.flipX = false;
-      } else {
-        raptor.flipX = true;
-      }
-      if (raptor.body.overlapX > 0) {
-        raptor.isOverlapped = false;
-      }
-      this.physics.moveToObject(raptor, player, 100);
-      if (
-        (raptor.body.velocity.x < 0 || raptor.body.velocity.x > 0) &&
-        !raptor.isOverlapped
-      ) {
-        raptor.anims.play("raptorRun", true);
-      }
-    } else if (!raptor.isAlive) {
-      raptor.setVelocityX(0);
-      if (raptor.anims.currentFrame.isLast) {
-        raptor.anims.pause(raptor.anims.currentAnim.frames[5]);
-      } else {
-        raptor.anims.play("raptorFaint", true);
-      }
-    }
-    if (raptor.isAlive && raptor.tamed) {
-      this.physics.moveToObject(raptor, player, 100);
-      if (raptor.body.velocity.x === 0) {
-        // raptor.anims.play("raptorIdle", true);
-      } else if (raptor.body.velocity.x < 0 || raptor.body.velocity.x > 0) {
-        raptor.anims.play("raptorRun", true);
-      }
-    }
-  });
-  function callOnce() {
-    hasFunctionBeenCalled = false;
-  }
-  if (tree.health <= 0 && !hasFunctionBeenCalled) {
-    callOnce();
-    let woodAmount = Math.floor(Math.random() * 10) + 1;
-    if (
-      !player.inventory.find((item) => {
-        return item.id === 1;
-      })
-    ) {
-      player.inventory.push(wood);
-    }
-    wood.amount += woodAmount;
-    let addWood = this.add.text(
-      player.body.position.x,
-      player.body.position.y,
-      `Added ${woodAmount} wood.`,
-      {
-        fontsize: 30,
-      }
-    );
-    setTimeout(() => {
-      addWood.destroy();
-    }, 2000);
-    tree.clear(true, true);
-    hasFunctionBeenCalled = true;
-  }
-  if (keyQ.isDown) {
-    if (player.inventory[0].amount >= club.requirement.wood) {
-      player.inventory[0].amount -= club.requirement.wood;
-      console.log("making club...");
-      setTimeout(() => {
-        let itemBar = document.querySelector("#items").children;
-        player.inventory.push(club);
-
-        for (let i = 0; i < itemBar.length; i++) {
-          if (!itemBar[i].children[0].src) {
-            itemBar[i].children[0].src = "./assets/UI/Wooden_Club.png";
-            itemBar[i].currentItemId = 2;
-
-            player.inventory.find((item) => {
-              return item.id === 2;
-            }).slot = i;
-            break;
-          }
-        }
-        console.log(player.inventory);
-        // console.log(itemBar);
-      }, 2000);
-    } else {
-      console.log("not enough wood");
-    }
-  }
-  if (keyF.isDown) {
-    let _item = player.inventory.find((item) => {
-      return item.slot === itemPosition;
-    });
-    if (_item) {
-      currentAnim = _item.anim;
-    } else {
-      currentAnim = "PlayerNeutral";
-    }
   }
 }
 
