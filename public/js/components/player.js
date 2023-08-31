@@ -1,18 +1,22 @@
 export default class Player {
-    constructor(scene, x, y, collision, objects, dinos) {
+    constructor(scene, x, y, collision, objects, dinos, items) {
         this.scene = scene
         this.keys = scene.input.keyboard.createCursorKeys();
         this.currentWeapon = 'Fists'
         this.hasAttacked = false
-        this.health = 100
+        this.initialHealth = 100
+        this.currentHealth = this.initialHealth
         this.damage = 10
+        this.items = items
         this.inventory = []
         this.tames = []
+        this.objects = objects
         this.dinos = dinos
         this.level = 1
         this.xp = 0
         this.isAlive = true
         this.player = scene.physics.add.sprite(x, y, 'player')
+        this.objectHitText = ''
         this.player.setOffset(0, -2);
         this.player.setSize(15, 0);
         this.keyW = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
@@ -24,6 +28,7 @@ export default class Player {
         this.keyF = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
         this.shift = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
         this.enter = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.tab = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
         this.hitbox = scene.add.rectangle(
     this.player.body.position.x,
     this.player.body.position.y,
@@ -32,6 +37,18 @@ export default class Player {
     0x6666ff
   );
         scene.physics.add.collider(this.player, collision)
+        window.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            document.querySelector('#inventory').classList.toggle('hidden')
+            document.querySelector('#inventory-actual').innerHTML = ''
+            this.inventory.forEach(item => {
+                document.querySelector('#inventory-actual').insertAdjacentHTML('afterbegin', `<div style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'><img src = ${item.img}></div>`)
+            })
+        }
+    })
+    document.querySelector('body').insertAdjacentHTML('afterend', `
+          <div style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'><img src = 'https://openclipart.org/image/800px/218084'></div>
+    `)
     }
 
     update() {
@@ -85,13 +102,24 @@ export default class Player {
           0x6666ff
         );
         this.scene.physics.add.existing(this.hitbox, true);
+        //DINOS
         for (let dino of this.dinos) {
             if (
                 this.scene.physics.overlap(this.hitbox, dino.dino)
             ) {
                 console.log(this.scene.physics.world.collide(this.player, this.dinos[0]))
                 this.isAttacking = false
-                dino.health -= this.damage
+                dino.currentHealth -= this.damage
+            }
+        }
+        //OBJECTS
+        for (let object of this.objects) {
+            if (
+                this.scene.physics.overlap(this.hitbox, object.objectType)
+            ) {
+                console.log(this.scene.physics.world.collide(this.player, this.dinos[0]))
+                this.isAttacking = false
+                object.health -= this.damage
             }
         }
   } else if (this.player.flipX) {
@@ -107,9 +135,37 @@ export default class Player {
             if (
                 this.scene.physics.overlap(this.hitbox, dino.dino)
             ) {
-                console.log(this.scene.physics.world.collide(this.player, this.dinos[0]))
                 this.isAttacking = false
-                dino.health -= this.damage
+                dino.currentHealth -= this.damage
+            }
+        }
+        for (let object of this.objects) {
+            if (
+                this.scene.physics.overlap(this.hitbox, object.objectType)
+            ) {
+                this.isAttacking = false
+                object.health -= this.damage
+                if (!this.inventory.find(item => {
+                        return item.name === object.dropType.name
+                    })) {
+                        this.inventory.push(object.dropType)
+                        
+                    console.log(this.inventory)
+                    } else {
+                        object.amount = Math.floor(Math.random() * 6)
+                        this.inventory.find(item => {
+                        return item.name === object.dropType.name
+                    }).amount += object.amount
+                    
+        this.objectHitText = this.scene.add.text(
+        this.player.body.position.x,
+        this.player.body.position.y,
+        `Harvested ${object.amount} ${object.dropType.name}`,
+        { fontsize: 10, color: "white" })
+        setTimeout(() => {
+            this.objectHitText.destroy()
+        }, 1000)
+                    }
             }
         }
   }
@@ -117,6 +173,28 @@ export default class Player {
 }
 
   // END OF ATTACKING
+
+  //TAMING
+      for (let dino of this.dinos) {
+            if (
+                this.scene.physics.overlap(this.player, dino.dino)
+            ) {
+                if (!dino.isAlive) {
+                    if (this.keyE.isDown) {
+                        dino.currentHealth = dino.initialHealth * 0.20
+                        dino.tamed = true
+                        this.tames.push(dino)
+                        console.log(this.tames)
+                    }
+                }
+        }
+    }
+    
+  // END OF TAMING
+
+  // OBJECTS
+
+  // END OF OBJECTS
 
   // LISTENERS
 window.addEventListener('mousemove', (e) => {
@@ -130,7 +208,7 @@ window.addEventListener("click", () => {
     this.isAttacking = true;
 });
   // END OF LISTENERS
-    
-  }
+
+}
 
 }

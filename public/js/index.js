@@ -1,50 +1,13 @@
-// import { Reverse } from "../../dist/bundle.js";
-// import {Raptor} from "../../dist/bundle.js";
 import Raptor from './components/raptor.js'
 import Player from './components/player.js'
-
-let hasFunctionBeenCalled = false;
+import items from './components/items.js'
+import Tree from './components/tree.js'
 let player,
-  platforms,
-  cursors,
-  bg,
-  overlap,
-  keyW,
-  keyS,
-  keyA,
-  keyD,
-  keyQ,
-  keyE,
-  keyF,
-  shift,
-  enter,
-  punchHitbox,
-  overlapTriggered,
-  tame,
-  meat,
-  raptorVision,
-  tree,
-  item1
-let currentAnim = "PlayerNeutral";
-let itemPosition = 0;
+  platforms;
 let raptors = []
-let counter = 0;
-let start = false;
+let trees = []
 let backgrounds = [];
-let club = {
-  id: 2,
-  dmg: 5,
-  amount: 0,
-  torpor: 5,
-  requirement: {
-    wood: 1,
-  },
-  anim: "club",
-};
-let wood = {
-  id: 1,
-  amount: 0,
-};
+let fulfilledItems = await items
 const config = {
   type: Phaser.AUTO,
   parent: "phaser-example",
@@ -73,7 +36,10 @@ const config = {
 function preload() {
   this.load.image("startScreen", "/assets/UI/StartScreen.jpg");
   this.load.image("grass", "/assets/objects/grass.png");
+  this.load.image("sand", "/assets/objects/sand.png");
   this.load.image("tree1", "/assets/objects/tree (5).png");
+        this.load.image("palmTree", "/assets/objects/palmtree.png");
+
   this.load.image("background", "/assets/background/Layer_0000_9.png");
   this.load.image("background2", "/assets/background/Layer_0001_8.png");
   this.load.image("background3", "assets/background/Layer_0002_7.png");
@@ -155,22 +121,7 @@ function preload() {
 
 function create() {
   //ANCHOR - CREATE
-  // let startingScreen = this.add
-  //   .image(0, 0, "startScreen")
-  //   .setOrigin(0, 0)
-  //   .setScale(0.5, 0.5);
-  // this.add.text(0, 0, "Press ENTER to start.", { fontsize: 30 });
-  keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-  keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-  keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-  keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-  keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-  keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-  keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
-  shift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-  enter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
-  // startingScreen.destroy();
-  let { width, height } = game.config;
+
 
   // bg = this.add.image(0, 0, "background").setOrigin(0, 0).setScrollFactor(0);
   // bg.displayWidth = this.sys.canvas.width; // sets the width and height of the image to the width and height of the canvas
@@ -425,23 +376,31 @@ function create() {
     platforms.push(
       this.physics.add
         .staticGroup({
-          key: "grass",
-          setXY: { x: 920 * i, y: 500 },
+          key: "sand",
+          setXY: { x: 300 * i, y: 500 },
         })
         .scaleY(1.05)
     );
   }
 
-  player = new Player(this, 700, 400, platforms, null, raptors)
+  player = new Player(this, 1500, 400, platforms, trees, raptors, fulfilledItems)
   raptors.push(new Raptor(this, 600, 400, platforms, player))
+  raptors.push(new Raptor(this, 1000, 400, platforms, player))
+  trees.push(new Tree(this, 1500, 435, player, fulfilledItems))
   this.physics.add.existing(platforms);
   this.cameras.main.startFollow(player.player, true, 1, 1, 0, 200);
+  console.log(trees)
 }
 
 function update() {
   //ANCHOR - UPDATE
-  raptors[0].update()
+  for (let dino of raptors) {
+    dino.update()
+  }
   player.update()
+  for (let object of trees) {
+    object.update()
+  }
   // Background Handles
   for (let i = 0; i < backgrounds.length; i++) {
     const bg = backgrounds[i];

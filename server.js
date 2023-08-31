@@ -1,7 +1,8 @@
 const exp = require("constants");
 const express = require("express");
 const path = require("path");
-
+const {getItems} = require('./db/dbOperations.js')
+let data
 const app = express();
 app.use(express.static("static"));
 app.use(express.static("static/js"));
@@ -30,6 +31,13 @@ app.use(
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/dist/index.html");
 });
+
+app.get('/items', (req, res) => {
+  getItems().then((result) => {
+      res.send(result.recordset);
+    });
+    
+})
 
 app.listen(1010, () => {
   console.log("listening on yo mama");
