@@ -3,11 +3,12 @@ import Player from './components/player.js'
 import items from './components/items.js'
 import Tree from './components/tree.js'
 let player,
-  platforms;
+platforms;
 let raptors = []
 let trees = []
 let backgrounds = [];
 let fulfilledItems = await items
+
 const config = {
   type: Phaser.AUTO,
   parent: "phaser-example",
@@ -18,7 +19,7 @@ const config = {
     default: "arcade",
     arcade: {
       gravity: { y: 300 },
-      debug: true,
+      debug: false,
     },
     pixelArt: true,
     roundPixels: false,
@@ -27,9 +28,6 @@ const config = {
     preload: preload,
     create: create,
     update: update,
-    // extend: {
-    //         drawKeyboard: drawKeyboard
-    //     }
   },
 };
 
@@ -38,8 +36,7 @@ function preload() {
   this.load.image("grass", "/assets/objects/grass.png");
   this.load.image("sand", "/assets/objects/sand.png");
   this.load.image("tree1", "/assets/objects/tree (5).png");
-        this.load.image("palmTree", "/assets/objects/palmtree.png");
-
+  this.load.image("palmTree", "/assets/objects/palmtree.png");
   this.load.image("background", "/assets/background/Layer_0000_9.png");
   this.load.image("background2", "/assets/background/Layer_0001_8.png");
   this.load.image("background3", "assets/background/Layer_0002_7.png");
@@ -383,7 +380,7 @@ function create() {
     );
   }
 
-  player = new Player(this, 1500, 400, platforms, trees, raptors, fulfilledItems)
+  player = new Player(this, 1600, 400, platforms, trees, raptors, fulfilledItems)
   raptors.push(new Raptor(this, 600, 400, platforms, player))
   raptors.push(new Raptor(this, 1000, 400, platforms, player))
   trees.push(new Tree(this, 1500, 435, player, fulfilledItems))

@@ -9,6 +9,7 @@ export default class Player {
         this.damage = 10
         this.items = items
         this.inventory = []
+        this.currentInventoryTab = 'inventory'
         this.tames = []
         this.objects = objects
         this.dinos = dinos
@@ -37,21 +38,80 @@ export default class Player {
     0x6666ff
   );
         scene.physics.add.collider(this.player, collision)
+        console.log(document.body)
+        window.addEventListener('click', (e) => {
+            let itm = this.items.find(item => {
+                return item.item_name === e.target.parentElement.id
+            })
+            console.dir(itm)
+        })
+        window.addEventListener('dblclick', (e) => {
+            if (this.currentInventoryTab === 'craft') {
+                let itm = this.items.find(item => {
+                    return item.item_name === e.target.parentElement.id
+                })
+                let requirements = this.inventory.find(item => {
+                    return item.name === itm.resources
+                })
+                if (+requirements.amount >= +itm.requirements) {
+                    requirements.amount -= +itm.requirements
+                    console.log('crafting...')
+                    setTimeout(() => {
+                        console.log('crafted!')
+                        this.inventory.push(itm)
+                    },2000)
+                }
+            } else if (this.currentInventoryTab === 'inventory') {
+                let itm = this.items.find(item => {
+                    return item.item_name === e.target.parentElement.classList[1]
+                })
+                console.log(itm)
+                this.currentWeapon = itm.item_name
+                console.log(this)
+            }
+        })
+        document.querySelector('#craftButton').addEventListener('click', () => {
+            this.currentInventoryTab = 'craft'
+            document.querySelector('#inventory-actual').innerHTML = ''
+            this.items.forEach((item, index) => {
+                if (item.craftable) {
+                    document.querySelector('#inventory-actual').insertAdjacentHTML('afterbegin', 
+                    `<div class = 'item-box' id = ${item.item_name} style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'>
+                        <img style = 'object-fit: contain; width: 40px; height: 40px;' src = '${item.img}'>
+                        </div>`
+                        )
+                }
+            })
+        })
+        document.querySelector('#inventoryButton').addEventListener('click', () => {
+            this.currentInventoryTab = 'inventory'
+            document.querySelector('#inventory-actual').innerHTML = ''
+            this.inventory.forEach((item, index) => {
+                console.log(item)
+                document.querySelector('#inventory-actual').insertAdjacentHTML('afterbegin', 
+                `<div class = 'item-box ${item.item_name}' id = item${index} style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'>
+                    <img style = 'object-fit: contain; width: 40px; height: 40px;' src = '${item.img}'>
+                    </div>`
+                    )
+            })
+        })
         window.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
             document.querySelector('#inventory').classList.toggle('hidden')
             document.querySelector('#inventory-actual').innerHTML = ''
-            this.inventory.forEach(item => {
-                document.querySelector('#inventory-actual').insertAdjacentHTML('afterbegin', `<div style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'><img src = ${item.img}></div>`)
+            this.inventory.forEach((item, index) => {
+                console.log(item)
+                document.querySelector('#inventory-actual').insertAdjacentHTML('afterbegin', 
+                `<div id = 'item${index}' style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'>
+                    <img style = 'object-fit: contain; width: 40px; height: 40px;' src = '${item.img}'>
+                    </div>`
+                    )
             })
         }
     })
-    document.querySelector('body').insertAdjacentHTML('afterend', `
-          <div style = 'border: 1px solid grey; width: 40px; height: 40px; margin: 10px'><img src = 'https://openclipart.org/image/800px/218084'></div>
-    `)
     }
 
-    update() {
+update() {
   this.hitbox.destroy();
   this.hitbox.isFilled = false;
   // MOVEMENT
@@ -89,8 +149,11 @@ export default class Player {
         if (this.player.anims.currentFrame.isLast) {
             this.isAttacking = false
         }
-    } else if (this.currentWeapon === 'Club') {
+    } else if (this.currentWeapon === 'club') {
         this.player.anims.play('club', true)
+        if (this.player.anims.currentFrame.isLast) {
+            this.isAttacking = false
+        }
     }
     if (this.player.anims.currentFrame.index > 3) {
       if (!this.player.flipX) {
@@ -192,9 +255,16 @@ export default class Player {
     
   // END OF TAMING
 
-  // OBJECTS
+  // INVENTORY
+    if (this.currentInventoryTab === 'inventory') {
 
-  // END OF OBJECTS
+this.inventory.forEach((item, index) => {
+        if (item.amount <= 0) {
+            this.inventory.splice(index, 1)
+        }
+    })
+}
+  // END OF INVENTORY
 
   // LISTENERS
 window.addEventListener('mousemove', (e) => {

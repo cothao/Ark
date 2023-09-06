@@ -1,3 +1,15 @@
 .hidden {
     visibility: hidden;
 }
+
+#craftButton:hover {
+    cursor: pointer;
+}
+
+#inventoryButton:hover {
+    cursor: pointer;
+}
+
+.item-box:hover {
+    border: 2px solid white;
+}

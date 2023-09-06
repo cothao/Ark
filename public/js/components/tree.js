@@ -8,7 +8,9 @@ export default class Tree {
         this.dropType = {
             name: 'wood',
             amount: this.amount,
-            img: data.img
+            img: data.find(item => {
+                return item.item_name === 'wood'
+            }).img
         }
         this.objectType = scene.physics.add.staticGroup({
     key: "palmTree",
